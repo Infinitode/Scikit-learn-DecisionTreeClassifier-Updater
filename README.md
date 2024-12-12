@@ -1,5 +1,12 @@
 # Scikit-learn `DecisionTreeClassifier` Updater
 
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/infinitode/scikit-learn-decisiontreeclassifier-updater)
+![GitHub top language](https://img.shields.io/github/languages/top/infinitode/scikit-learn-decisiontreeclassifier-updater)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/infinitode/scikit-learn-decisiontreeclassifier-updater)
+![GitHub License](https://img.shields.io/github/license/infinitode/scikit-learn-decisiontreeclassifier-updater)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/infinitode/scikit-learn-decisiontreeclassifier-updater)
+[![GitHub Repo stars](https://img.shields.io/github/stars/infinitode/scikit-learn-decisiontreeclassifier-updater)](https://github.com/infinitode/scikit-learn-decisiontreeclassifier-updater/stargazers)
+
 This repository contains the necessary code and tools to upgrade `DecisionTreeClassifier` models from `scikit-learn==1.3.x` or lower to the newer versions of `scikit-learn`.
 
 ## Features
