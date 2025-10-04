@@ -1,6 +1,6 @@
-# Contributing to Scikit-learn DecisionTreeClassifier Updater
+# Contributing to Scikit-learn Model Updater
 
-Thank you for considering contributing to **Scikit-learn DecisionTreeClassifier Updater**! Contributions, whether they are bug fixes, new features, or improvements to the documentation, are always welcome. Before contributing, please read the following guidelines to ensure smooth collaboration.
+Thank you for considering contributing to **Scikit-learn Model Updater**! Contributions, whether they are bug fixes, new features, or improvements to the documentation, are always welcome. Before contributing, please read the following guidelines to ensure smooth collaboration.
 
 ## Getting Started
 
@@ -19,7 +19,7 @@ Thank you for considering contributing to **Scikit-learn DecisionTreeClassifier 
 ## How to Contribute
 
 1. **Report Issues**
-   Use the [GitHub Issues page](https://github.com/Infinitode/scikit-learn-decisiontreeclassifier-updater/issues) to report bugs or suggest features. Please include:
+   Use the [GitHub Issues page](https://github.com/Infinitode/scikit-learn-model-updater/issues) to report bugs or suggest features. Please include:
    - A clear description of the issue or suggestion.
    - Steps to reproduce (for bugs).
 
@@ -44,6 +44,6 @@ To maintain a positive and collaborative community, we ask that all contributors
    Offer helpful and actionable suggestions during code reviews.
 
 3. **Follow Licensing Requirements**
-   Ensure that any derivative works comply with the [license](https://github.com/infinitode/scikit-learn-decisiontreeclassifier-updater/blob/main/LICENSE).
+   Ensure that any derivative works comply with the [license](https://github.com/infinitode/scikit-learn-model-updater/blob/main/LICENSE).
 
-By contributing, you agree to abide by these guidelines and this project's [license](https://github.com/infinitode/scikit-learn-decisiontreeclassifier-updater/blob/main/LICENSE). Thank you for helping make **Scikit-learn DecisionTreeClassifier Updater** better!
+By contributing, you agree to abide by these guidelines and this project's [license](https://github.com/infinitode/scikit-learn-model-updater/blob/main/LICENSE). Thank you for helping make **Scikit-learn Model Updater** better!
