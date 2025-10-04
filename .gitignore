@@ -1,3 +1,5 @@
 venv-new
 .venv
 .vscode
+__pycache__/
+new_env/

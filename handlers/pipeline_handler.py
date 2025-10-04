@@ -21,13 +21,27 @@ def convert_model(model, args):
     if isinstance(model, (Pipeline, FeatureUnion, ColumnTransformer)):
         steps_data = []
 
-        # Determine the attribute that holds the steps/transformers
+        # Handle different pipeline types with their specific attributes
         if isinstance(model, Pipeline):
             steps_attr = 'steps'
-        else: # FeatureUnion, ColumnTransformer
+            components = model.steps
+        elif isinstance(model, FeatureUnion):
             steps_attr = 'transformer_list'
+            components = model.transformer_list
+        elif isinstance(model, ColumnTransformer):
+            steps_attr = 'transformers'
+            components = model.transformers
+        else:
+            return None
 
-        for name, component in getattr(model, steps_attr):
+        for item in components:
+            if isinstance(model, ColumnTransformer):
+                # ColumnTransformer has format: (name, transformer, columns)
+                name, component = item[0], item[1]
+            else:
+                # Pipeline and FeatureUnion have format: (name, transformer)
+                name, component = item
+            
             handler = get_handler(component)
             if not handler:
                 raise TypeError(f"No handler for component {name} of type {type(component)} in pipeline.")
@@ -39,16 +53,25 @@ def convert_model(model, args):
             if attr_to_del and hasattr(component, attr_to_del):
                 delattr(component, attr_to_del)
 
-            steps_data.append({
+            step_data = {
                 "name": name,
                 "shell": component,
                 "upgraded_state": upgraded_state,
                 "model_attrs": model_attrs
-            })
+            }
+            
+            # For ColumnTransformer, we also need to preserve the columns specification
+            if isinstance(model, ColumnTransformer):
+                step_data["columns"] = item[2]  # The third element is the column specification
+            
+            steps_data.append(step_data)
 
         # The pipeline's own state is the collection of its converted steps
         upgraded_state = steps_data
-        model_attrs = {'class_name': model.__class__.__name__}
+        model_attrs = {
+            'class_name': model.__class__.__name__,
+            'steps_attr': steps_attr  # Store which attribute was used
+        }
 
         return upgraded_state, model_attrs, steps_attr
     return None
@@ -74,7 +97,14 @@ def upgrade_model(shell, upgraded_state, model_attrs):
 
         # Recursively upgrade the component
         reconstructed_component = handler.upgrade_model(component_shell, component_upgraded_state, component_model_attrs)
-        reconstructed_steps.append((step_data['name'], reconstructed_component))
+        
+        if class_name == 'ColumnTransformer':
+            # For ColumnTransformer, include the columns specification
+            columns = step_data.get('columns')
+            reconstructed_steps.append((step_data['name'], reconstructed_component, columns))
+        else:
+            # For Pipeline and FeatureUnion
+            reconstructed_steps.append((step_data['name'], reconstructed_component))
 
     # Create a new pipeline instance with the reconstructed steps
     if class_name == 'Pipeline':

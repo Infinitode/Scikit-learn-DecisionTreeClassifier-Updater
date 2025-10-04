@@ -9,6 +9,29 @@
 
 This repository contains a comprehensive set of tools to upgrade a wide variety of Scikit-learn models from older versions (e.g., `<=1.3.x`) to be compatible with newer Scikit-learn environments.
 
+## ⚠️ Important Notice: Model Refitting
+
+During the upgrade process, some models are **refit** with their original training data, while others have their internal components directly upgraded. It is crucial to understand which models are affected:
+
+- **Models that ARE refit**:
+  - `KNeighborsClassifier`
+  - `KNeighborsRegressor`
+  - `NearestNeighbors`
+
+- **Why is this necessary?**
+  - For these models, the internal data structures are not easily portable across Scikit-learn versions. To ensure compatibility, the tool extracts the original training data (`X` and `y`) and uses it to refit a new model instance in the target environment.
+
+- **What does this mean for you?**
+  - The refitting process ensures that your model is compatible with the new environment, but it is essentially a new model trained on the same data. The performance should be identical, but the model object itself is new.
+
+- **Pipelines**:
+  - If your `Pipeline`, `FeatureUnion`, or `ColumnTransformer` contains one of the models listed above, that specific step will be refit, while other steps will be upgraded directly.
+
+All other supported models are upgraded by transferring their learned attributes to a new model instance without refitting.
+
+> [!NOTE]
+> Our internal saving logic uses `pickle` and not `joblib`. Refrain from using `joblib` to load converted models after they have been generated if not using the command-line interface directly.
+
 ## Features
 
 - **Model Converter**: Extracts and upgrades the internal components of a Scikit-learn model.
@@ -54,72 +77,58 @@ This tool supports a wide range of Scikit-learn models, including:
 
 ## Installation
 
-Clone this repository:
-```bash
-git clone https://github.com/Infinitode/repo-name.git
-cd repo-name
-```
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Infinitode/Scikit-learn-Model-Updater.git
+   cd Scikit-learn-Model-Updater
+   ```
 
-## Usage
+2. **Set up your environments**:
+   This tool requires two separate Python environments:
+   - **`old_environment`**: Where your original model was trained and saved. It should have the **older** versions of `scikit-learn`, `numpy`, and other relevant libraries.
+   - **`new_environment`**: Where you want to use the upgraded model. It should have the **newer/target** versions of `scikit-learn` and `numpy`.
 
-The model upgrade process is split into two main steps: `convert` and `upgrade`.
+   It is highly recommended to use virtual environments (e.g., `venv` or `conda`) to manage these dependencies.
 
-**1. Set up `old_environment`**
+## How It Works: The Two-Step Process
 
-- Start with an environment that has the **older** versions of `scikit-learn` and `numpy` installed (the environment where your model was originally saved).
-- Make sure to use the same Python version your model was saved in.
+The model upgrade is a two-step process: `convert` and `upgrade`.
 
-**2. Convert the Model**
+### Step 1: Convert the Model (in `old_environment`)
 
-Run the `convert` command to extract the model's components and prepare them for the upgrade. This step should be run in your `old_environment`.
+This step extracts the model's internal components and prepares them for the upgrade.
 
-```bash
-python main.py convert \
-    --model_path path/to/original_model.pkl \
-    --shell_path path/to/model_shell.pkl \
-    --upgraded_tree_state_path path/to/upgraded_state.pkl \
-    --model_json_path path/to/model_metadata.json
-```
+1. **Activate your `old_environment`**.
+2. Run the `convert` command:
+   ```bash
+   python main.py convert \
+       --model_path path/to/original_model.pkl \
+       --shell_path path/to/model_shell.pkl \
+       --upgraded_tree_state_path path/to/upgraded_state.pkl \
+       --model_json_path path/to/model_metadata.json
+   ```
+   This will generate three files: a model "shell", the upgraded state, and a JSON metadata file.
 
-**3. Set up `new_environment`**
+### Step 2: Upgrade the Model (in `new_environment`)
 
-- Create a new environment.
-- Install the **latest/target** versions of `scikit-learn` and `numpy`.
-- Use a modern/target Python version.
+This step reconstructs the model in the new environment using the files generated in the `convert` step.
 
-**4. Upgrade the Model**
+1. **Activate your `new_environment`**.
+2. Run the `upgrade` command:
+   ```bash
+   python main.py upgrade \
+       --shell_path path/to/model_shell.pkl \
+       --upgraded_tree_state_path path/to/upgraded_state.pkl \
+       --model_json_path path/to/model_metadata.json \
+       --output_path path/to/upgraded_model.pkl
+   ```
+   This will create the final, upgraded model file.
 
-Run the `upgrade` command to reconstruct the model using the files generated in the `convert` step. This step should be run in your `new_environment`.
+## Testing
 
-```bash
-python main.py upgrade \
-    --shell_path path/to/model_shell.pkl \
-    --upgraded_tree_state_path path/to/upgraded_state.pkl \
-    --model_json_path path/to/model_metadata.json \
-    --output_path path/to/upgraded_model.pkl
-```
-
-### Command-Line Arguments
-
-You can use the `--help` flag to get more information about the commands and their arguments.
-
-```bash
-python main.py --help
-python main.py convert --help
-python main.py upgrade --help
-```
-
-#### `convert` arguments:
-- `--model_path`: Path to your original saved model.
-- `--shell_path`: Output path for the model shell.
-- `--upgraded_tree_state_path`: Output path for the upgraded model state.
-- `--model_json_path`: Output path for the model's metadata.
-
-#### `upgrade` arguments:
-- `--shell_path`: Path to the model shell file created during conversion.
-- `--upgraded_tree_state_path`: Path to the upgraded model state file.
-- `--model_json_path`: Path to the model's metadata file.
-- `--output_path`: Output path for the final, upgraded model.
+To ensure the tool is working correctly, you can run the included tests. The tests are named as follows:
+- `test_conversion.py`: Run in the old environment to test old model conversion.
+- `test_upgrade.py`: Run in the new environment to test model upgrade.
 
 ## License
 

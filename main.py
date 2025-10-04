@@ -56,59 +56,71 @@ def convert_model(args):
 
 
 def upgrade_model(args):
-    shell = utils.load_model(args.shell_path)
-    handler = get_handler(shell)
-
-    if not handler:
-        # For models like scalers, the shell might not be enough to determine the handler.
-        # We can get the class name from the json file.
-        model_attrs = utils.load_json(args.model_json_path)
-        class_name = model_attrs.get('class_name')
-        if class_name:
-            # This is a bit of a hack, but it works for now.
-            # We create a dummy instance of the class to get the handler.
-            if class_name == 'StandardScaler':
-                handler = get_handler(StandardScaler())
-            elif class_name == 'MinMaxScaler':
-                handler = get_handler(MinMaxScaler())
-            elif class_name == 'KNeighborsClassifier':
-                handler = get_handler(KNeighborsClassifier())
-            elif class_name == 'KNeighborsRegressor':
-                handler = get_handler(KNeighborsRegressor())
-            elif class_name == 'NearestNeighbors':
-                handler = get_handler(NearestNeighbors())
-            elif class_name == 'SVC':
-                handler = get_handler(SVC())
-            elif class_name == 'SVR':
-                handler = get_handler(SVR())
-            elif class_name == 'LogisticRegression':
-                handler = get_handler(LogisticRegression())
-            elif class_name == 'Ridge':
-                handler = get_handler(Ridge())
-            elif class_name == 'Lasso':
-                handler = get_handler(Lasso())
-            elif class_name == 'PCA':
-                handler = get_handler(PCA())
-            elif class_name == 'IncrementalPCA':
-                handler = get_handler(IncrementalPCA())
-            elif class_name == 'KernelPCA':
-                handler = get_handler(KernelPCA())
-            elif class_name == 'PolynomialFeatures':
-                handler = get_handler(PolynomialFeatures())
-            elif class_name == 'OneHotEncoder':
-                handler = get_handler(OneHotEncoder())
-            elif class_name == 'Pipeline':
-                handler = get_handler(Pipeline(steps=[]))
-            elif class_name == 'FeatureUnion':
-                handler = get_handler(FeatureUnion(transformer_list=[]))
-            elif class_name == 'ColumnTransformer':
-                handler = get_handler(ColumnTransformer(transformers=[]))
-
-    if not handler:
-        raise TypeError(f"Model type {type(shell)} not supported for upgrade.")
-
+    # Load the upgraded state first to check if we need a shell
     upgraded_state = utils.load_model(args.upgraded_tree_state_path)
     model_attrs = utils.load_json(args.model_json_path)
+    class_name = model_attrs.get('class_name')
+    
+    # Check if this is a KNN model that doesn't need a shell
+    # upgraded_state might be a list (for ensemble models) or dict (for KNN)
+    is_knn_no_shell = isinstance(upgraded_state, dict) and upgraded_state.get('knn_no_shell', False)
+    
+    if is_knn_no_shell:
+        # For KNN models, we don't load the shell (it would fail with pickle errors)
+        shell = None
+        # Create a dummy instance to get the handler
+        if class_name == 'KNeighborsClassifier':
+            handler = get_handler(KNeighborsClassifier())
+        elif class_name == 'KNeighborsRegressor':
+            handler = get_handler(KNeighborsRegressor())
+        elif class_name == 'NearestNeighbors':
+            handler = get_handler(NearestNeighbors())
+        else:
+            raise TypeError(f"Unknown KNN model type: {class_name}")
+    else:
+        # For other models, load the shell normally
+        shell = utils.load_model(args.shell_path)
+        handler = get_handler(shell)
+
+        if not handler:
+            # For models like scalers, the shell might not be enough to determine the handler.
+            # We can get the class name from the json file.
+            if class_name:
+                # This is a bit of a hack, but it works for now.
+                # We create a dummy instance of the class to get the handler.
+                if class_name == 'StandardScaler':
+                    handler = get_handler(StandardScaler())
+                elif class_name == 'MinMaxScaler':
+                    handler = get_handler(MinMaxScaler())
+                elif class_name == 'SVC':
+                    handler = get_handler(SVC())
+                elif class_name == 'SVR':
+                    handler = get_handler(SVR())
+                elif class_name == 'LogisticRegression':
+                    handler = get_handler(LogisticRegression())
+                elif class_name == 'Ridge':
+                    handler = get_handler(Ridge())
+                elif class_name == 'Lasso':
+                    handler = get_handler(Lasso())
+                elif class_name == 'PCA':
+                    handler = get_handler(PCA())
+                elif class_name == 'IncrementalPCA':
+                    handler = get_handler(IncrementalPCA())
+                elif class_name == 'KernelPCA':
+                    handler = get_handler(KernelPCA())
+                elif class_name == 'PolynomialFeatures':
+                    handler = get_handler(PolynomialFeatures())
+                elif class_name == 'OneHotEncoder':
+                    handler = get_handler(OneHotEncoder())
+                elif class_name == 'Pipeline':
+                    handler = get_handler(Pipeline(steps=[]))
+                elif class_name == 'FeatureUnion':
+                    handler = get_handler(FeatureUnion(transformer_list=[]))
+                elif class_name == 'ColumnTransformer':
+                    handler = get_handler(ColumnTransformer(transformers=[]))
+
+    if not handler:
+        raise TypeError(f"Model type {class_name} not supported for upgrade.")
 
     upgraded_model = handler.upgrade_model(shell, upgraded_state, model_attrs)
     utils.save_model(upgraded_model, args.output_path)
